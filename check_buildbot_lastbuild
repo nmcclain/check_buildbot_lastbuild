@@ -1,0 +1,27 @@
+import argparse, urllib, json, socket
+
+def main():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-u', '--url', help='Buildbot base URL', required=True)
+	parser.add_argument('-b', '--builder', help='Name of the builder', required=True)
+	parser.add_argument('-t', '--timeout', default=10, type=int)
+	args = parser.parse_args()
+
+	try:
+		socket.setdefaulttimeout(args.timeout)
+		f = urllib.urlopen(args.url+"/json/builders/"+args.builder+"/builds/-1")
+		builder_data = json.loads(f.read())
+	except:
+		print "CRITICAL Unable to fetch builder status for %s" % args.builder
+		exit(2)
+
+	perfdata = "|steps=%d" % len(builder_data['steps'])
+	if ((builder_data['text'][0] == 'build') and (builder_data['text'][1] == 'successful')):
+	  print "OK Last %s build successful %s" % (args.builder , perfdata)
+	  exit(0)
+	else:
+	  print "CRITICAL Last %s build not successful %s" % (args.builder , perfdata)
+	  exit(2)
+
+if __name__ == "__main__":
+    main()
